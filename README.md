@@ -1,8 +1,7 @@
-![Zach's github stats](https://github-readme-stats.vercel.app/api?username=zkm&show_icons=true)
+![Zach's github stats](https://github-readme-stats.vercel.app/api?username=zkm&show_icons=true&theme=tokyonight)
 
 <details>
   <summary>My guiding principles</summary>
-  
   - Open is good.
   - Dependencies are bad.
   - Help others help themselves! 🙂
