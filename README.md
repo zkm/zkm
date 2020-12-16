@@ -16,7 +16,7 @@ If you've enjoyed or gotten use out of my work, please consider supporting me so
 
   <summary>Support via PayPal</summary>
 
-  [![Support via PayPal @zachschneider](https://raw.githubusercontent.com/jeremyckahn/jeremyckahn/master/support-via-paypal.png)](https://www.paypal.com/paypalme/zachschneider)
+  [![Support via PayPal @zachschneider](https://raw.githubusercontent.com/zkm/zkm/master/support-via-paypal.jpg)](https://www.paypal.com/paypalme/zachschneider)
 </details>
 
 **Languages and Tools:**  
