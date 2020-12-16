@@ -2,9 +2,10 @@
 
 <details>
   <summary>My guiding principles</summary>
+  
   - Open is good.
   - Dependencies are bad.
-  - Help others help themselves! 🙂
+  - Help others help themselves!
 </details>
 
 ## Please help support my work!
