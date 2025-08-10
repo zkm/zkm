@@ -31,6 +31,15 @@ me@zachschneider.com | https://zachschneider.com | https://zkm.tw
 
 ## Work Experience
 
+### GDIT - Web Developer Advisor
+Jan 2023 - Present, Remote
+ * Provide technical leadership and web development expertise for federal government contracts
+ * Lead cross-functional development teams on mission-critical government technology solutions
+ * Coordinate with multiple offshore development teams on defense and civilian agency projects
+ * Implement security-compliant development practices for federal information systems
+ * Mentor development teams on government technology standards and best practices
+ 
+ 
 ### EON Clinics - Senior Web Developer
 
 May 2020 – August 2022 Chicago, IL
