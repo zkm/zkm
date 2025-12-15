@@ -6,4 +6,4 @@ MD034: false           # Bare URLs (resume contains links)
 MD007: false           # Do not enforce list indentation in current docs
 MD022: false           # Do not require blank lines around headings
 MD032: false           # Do not require blank lines around lists
-MD012: true            # No multiple consecutive blank lines
+MD012: false           # Allow multiple consecutive blank lines
