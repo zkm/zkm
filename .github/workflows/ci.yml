@@ -24,7 +24,7 @@ jobs:
         run: npm install -g markdownlint-cli@0.39.0
       - name: Run markdownlint
         run: |
-          markdownlint '**/*.md' --ignore 'node_modules' || (
+          markdownlint '**/*.md' --config .markdownlint.yml --ignore 'node_modules' || (
             echo "Markdown lint issues found. See output above." && exit 1
           )
 
