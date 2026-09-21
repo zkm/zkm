@@ -61,6 +61,7 @@ Technologies I use most often in production environments.
   <a href="https://www.typescriptlang.org/" title="TypeScript"><img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript"/></a>
   <a href="https://developer.mozilla.org/docs/Web/HTML" title="HTML5"><img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white" alt="HTML5"/></a>
   <a href="https://developer.mozilla.org/docs/Web/CSS" title="CSS3"><img src="https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white" alt="CSS3"/></a>
+  <a href="https://vuejs.org/" title="Vue.js"><img src="https://img.shields.io/badge/Vue.js-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white" alt="Vue.js"/></a>
 </p>
 
 #### Backend & CMS
@@ -68,6 +69,9 @@ Technologies I use most often in production environments.
   <a href="https://wordpress.org/" title="WordPress"><img src="https://img.shields.io/badge/WordPress-21759B?style=for-the-badge&logo=wordpress&logoColor=white" alt="WordPress"/></a>
   <a href="https://www.php.net/" title="PHP"><img src="https://img.shields.io/badge/PHP-777BB4?style=for-the-badge&logo=php&logoColor=white" alt="PHP"/></a>
   <a href="https://nodejs.org/" title="Node.js"><img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js"/></a>
+  <a href="https://www.ruby-lang.org/" title="Ruby"><img src="https://img.shields.io/badge/Ruby-CC342D?style=for-the-badge&logo=ruby&logoColor=white" alt="Ruby"/></a>
+  <a href="https://www.perl.org/" title="Perl"><img src="https://img.shields.io/badge/Perl-39457E?style=for-the-badge&logo=perl&logoColor=white" alt="Perl"/></a>
+  <a href="https://www.rust-lang.org/" title="Rust"><img src="https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white" alt="Rust"/></a>
 </p>
 
 #### Data, Infrastructure, and Delivery
@@ -98,10 +102,6 @@ Technologies I use most often in production environments.
 #### Additional Platforms and Tooling
 <p>
   <a href="https://www.python.org/" title="Python"><img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/></a>
-  <a href="https://www.rust-lang.org/" title="Rust"><img src="https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white" alt="Rust"/></a>
-  <a href="https://www.ruby-lang.org/" title="Ruby"><img src="https://img.shields.io/badge/Ruby-CC342D?style=for-the-badge&logo=ruby&logoColor=white" alt="Ruby"/></a>
-  <a href="https://www.perl.org/" title="Perl"><img src="https://img.shields.io/badge/Perl-39457E?style=for-the-badge&logo=perl&logoColor=white" alt="Perl"/></a>
-  <a href="https://vuejs.org/" title="Vue.js"><img src="https://img.shields.io/badge/Vue.js-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white" alt="Vue.js"/></a>
   <a href="https://www.drupal.org/" title="Drupal"><img src="https://img.shields.io/badge/Drupal-0678BE?style=for-the-badge&logo=drupal&logoColor=white" alt="Drupal"/></a>
   <a href="https://aws.amazon.com/lambda/" title="AWS Lambda"><img src="https://img.shields.io/badge/AWS_Lambda-FF9900?style=for-the-badge&logo=awslambda&logoColor=white" alt="AWS Lambda"/></a>
   <a href="https://jestjs.io/" title="Jest"><img src="https://img.shields.io/badge/Jest-C21325?style=for-the-badge&logo=jest&logoColor=white" alt="Jest"/></a>
