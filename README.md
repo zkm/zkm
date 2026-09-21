@@ -32,13 +32,9 @@ I'm a web developer with nearly two decades of experience, from agencies and sta
 
 ## 🧭 Guiding Principles
 
-<details>
-  <summary>Click to expand</summary>
-  
-  - Prefer open standards and transparent systems.
-  - Introduce dependencies only when they create clear, lasting value.
-  - Build and document solutions that help others move independently.
-</details>
+- Prefer open standards and transparent systems.
+- Introduce dependencies only when they create clear, lasting value.
+- Build and document solutions that help others move independently.
 
 ## ⚙️ How I Work
 
