@@ -1,23 +1,30 @@
 # Hi, I'm Zach 👋
 
-I build reliable web products and open source tooling with an emphasis on clarity, maintainability, and measurable impact. I focus on practical automation, sound engineering fundamentals, and enabling teams to deliver with confidence.
+I'm a web developer with nearly two decades of experience, from agencies and startups to healthcare, e-commerce, and federal government work. I build reliable web products and open source tooling with an emphasis on clarity, maintainability, and accessibility. I focus on practical automation, sound engineering fundamentals, and enabling teams to deliver with confidence.
 
-- 💻 **Primary expertise:** JavaScript/TypeScript, React, PHP, WordPress, Node.js
-- 📊 **Focus areas:** AI-assisted automation, developer tooling, and data-informed product development
-- 🌱 **Current development areas:** API architecture, cloud platform fundamentals, observability, and data pipelines
+- 💻 **Primary expertise:** JavaScript/TypeScript, React, PHP, WordPress, Drupal, Node.js
+- 📊 **Focus areas:** AI-assisted automation, interactive AI demos, developer tooling, and secure, accessible (508/WCAG) web applications
+- 🌱 **Current development areas:** AWS serverless (Cognito, Lambda, S3), API architecture, observability, and data pipelines
 - 🏆 **Guiding principle:** Build systems that are useful, understandable, and sustainable
 
 ---
 
-![Zach's github stats](https://github-readme-stats-sigma-five.vercel.app/api?username=zkm&show_icons=true&theme=tokyonight)
-
-![Zach's activity graph](https://github-readme-activity-graph.vercel.app/graph?username=zkm&theme=tokyo-night)
+<p>
+  <img src="https://raw.githubusercontent.com/zkm/zkm/master/profile-summary-card-output/tokyonight/3-stats.svg" alt="Zach's GitHub stats" width="49%" />
+  <img src="https://raw.githubusercontent.com/zkm/zkm/master/profile-summary-card-output/tokyonight/2-most-commit-language.svg" alt="Zach's most used languages in commits" width="49%" />
+</p>
+<p>
+  <img src="https://raw.githubusercontent.com/zkm/zkm/master/profile-summary-card-output/tokyonight/4-productive-time.svg" alt="Zach's productive time of day" width="49%" />
+  <img src="https://raw.githubusercontent.com/zkm/zkm/master/profile-summary-card-output/tokyonight/0-profile-details.svg" alt="Zach's GitHub profile details" width="49%" />
+</p>
 
 ---
 
 ## 🚧 What I'm Building Now
 
-- Open source utilities that reduce setup friction and improve engineering workflows
+- Open source utilities that reduce setup friction and improve engineering workflows, like [motd_forge](https://rubygems.org/gems/motd_forge), a Ruby gem for randomized login banners
+- Small, dependency-light web apps, like [kanbone](https://github.com/zkm/kanbone), a Backbone.js kanban board, and [cadence](https://github.com/zkm/cadence), a Vue typing-speed trainer
+- Terminal games as a playground for new languages: [rustris](https://github.com/zkm/rustris) in Rust and [sigilman](https://github.com/zkm/sigilman) in Perl
 - AI-assisted automation tooling for content and web operations
 - Backend foundations that improve long-term maintainability and reliability
 
