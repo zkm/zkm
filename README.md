@@ -86,9 +86,6 @@ Technologies I use most often in production environments.
   <a href="https://redis.io/" title="Redis"><img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis"/></a>
 </p>
 
-<details>
-  <summary>Additional technologies used in production</summary>
-
 #### Frameworks and Build
 <p>
   <a href="https://nextjs.org/" title="Next.js"><img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js"/></a>
@@ -111,7 +108,6 @@ Technologies I use most often in production environments.
   <a href="https://graphql.org/" title="GraphQL"><img src="https://img.shields.io/badge/GraphQL-E10098?style=for-the-badge&logo=graphql&logoColor=white" alt="GraphQL"/></a>
   <a href="https://code.visualstudio.com/" title="VS Code"><img src="https://img.shields.io/badge/VS_Code-007ACC?style=for-the-badge&logo=visualstudiocode&logoColor=white" alt="VS Code"/></a>
 </p>
-</details>
 
 ---
 
