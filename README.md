@@ -98,6 +98,10 @@ Technologies I use most often in production environments.
 #### Additional Platforms and Tooling
 <p>
   <a href="https://www.python.org/" title="Python"><img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/></a>
+  <a href="https://www.rust-lang.org/" title="Rust"><img src="https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white" alt="Rust"/></a>
+  <a href="https://www.ruby-lang.org/" title="Ruby"><img src="https://img.shields.io/badge/Ruby-CC342D?style=for-the-badge&logo=ruby&logoColor=white" alt="Ruby"/></a>
+  <a href="https://www.perl.org/" title="Perl"><img src="https://img.shields.io/badge/Perl-39457E?style=for-the-badge&logo=perl&logoColor=white" alt="Perl"/></a>
+  <a href="https://vuejs.org/" title="Vue.js"><img src="https://img.shields.io/badge/Vue.js-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white" alt="Vue.js"/></a>
   <a href="https://www.drupal.org/" title="Drupal"><img src="https://img.shields.io/badge/Drupal-0678BE?style=for-the-badge&logo=drupal&logoColor=white" alt="Drupal"/></a>
   <a href="https://aws.amazon.com/lambda/" title="AWS Lambda"><img src="https://img.shields.io/badge/AWS_Lambda-FF9900?style=for-the-badge&logo=awslambda&logoColor=white" alt="AWS Lambda"/></a>
   <a href="https://jestjs.io/" title="Jest"><img src="https://img.shields.io/badge/Jest-C21325?style=for-the-badge&logo=jest&logoColor=white" alt="Jest"/></a>
