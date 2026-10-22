@@ -25,6 +25,11 @@ I'm a web developer with nearly two decades of experience, from agencies and sta
 - Open source utilities that reduce setup friction and improve engineering workflows, like [motd_forge](https://rubygems.org/gems/motd_forge), a Ruby gem for randomized login banners
 - Small, dependency-light web apps, like [kanbone](https://github.com/zkm/kanbone), a Backbone.js kanban board, and [cadence](https://github.com/zkm/cadence), a Vue typing-speed trainer
 - Terminal games as a playground for new languages: [rustris](https://github.com/zkm/rustris) in Rust and [sigilman](https://github.com/zkm/sigilman) in Perl
+- Upstream open source contributions:
+  - **Linux kernel:** a two-patch cleanup series for the `rtl8723bs` staging Wi-Fi driver
+  - **Drupal core:** a fix for a random failure in `NodeDeleteConfirmTest` ([#3630734](https://www.drupal.org/project/drupal/issues/3630734), [MR !17439](https://git.drupalcode.org/project/drupal/-/merge_requests/17439))
+  - **[Photo Craft](https://github.com/storytold/photocraft):** a Kind/Name/Mode filter dropdown for the Layers panel ([#5268](https://github.com/storytold/photocraft/pull/5268)) and a font preview test fix for fonts with blank Arabic glyphs ([#5261](https://github.com/storytold/photocraft/pull/5261))
+  - **[Apollo-11](https://github.com/chrislgarry/Apollo-11):** tooling upkeep ([#988](https://github.com/chrislgarry/Apollo-11/pull/988))
 - AI-assisted automation tooling for content and web operations
 - Backend foundations that improve long-term maintainability and reliability
 
