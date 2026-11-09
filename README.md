@@ -1,5 +1,12 @@
 # Hi, I'm Zach 👋
 
+<a href="https://github.com/zkm">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/zkm/zkm/master/dark_mode.svg">
+    <img alt="zach@schneider: neofetch-style profile card with an ASCII portrait, skills, contact info, and GitHub stats" src="https://raw.githubusercontent.com/zkm/zkm/master/light_mode.svg">
+  </picture>
+</a>
+
 I'm a web developer with nearly two decades of experience, from agencies and startups to healthcare, e-commerce, and federal government work. I build reliable web products and open source tooling with an emphasis on clarity, maintainability, and accessibility. I focus on practical automation, sound engineering fundamentals, and enabling teams to deliver with confidence.
 
 - 💻 **Primary expertise:** JavaScript/TypeScript, React, PHP, WordPress, Drupal, Node.js
@@ -120,3 +127,7 @@ If my work has been useful to you, please consider supporting it so I can contin
   <summary>Support via PayPal</summary>
   <a href="https://www.paypal.com/paypalme/zachschneider" target="_blank"><img src="https://raw.githubusercontent.com/zkm/zkm/master/assets/support-via-paypal.png" alt="Support via PayPal @zachschneider" width="250" height="301" /></a>
 </details>
+
+---
+
+<sub>Profile card adapted from <a href="https://github.com/Andrew6rant/Andrew6rant">Andrew6rant</a>'s neofetch-style README.</sub>
