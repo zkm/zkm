@@ -7,3 +7,4 @@ MD007: false           # Do not enforce list indentation in current docs
 MD022: false           # Do not require blank lines around headings
 MD032: false           # Do not require blank lines around lists
 MD012: false           # Allow multiple consecutive blank lines
+MD041: false           # README opens with the profile card, not an H1
