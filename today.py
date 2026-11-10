@@ -136,9 +136,11 @@ query ($repo_name: String!, $owner: String!, $cursor: String, $page_size: Int!, 
         }
     }
 }'''
-# GitHub returns 502/504 (or a 200 with a timeout in `errors`) when computing additions/deletions
-# for a page of large commits takes too long, so fall back to progressively smaller pages.
-PAGE_SIZES = (100, 50, 25, 10, 5)
+# GitHub returns 502/504 (or a 200 with a timeout in `errors`) when a query takes too long to compute,
+# such as additions/deletions for a page of large commits, or commit counts for forks of huge projects.
+# Paginated queries fall back to progressively smaller pages.
+PAGE_SIZES = (100, 50, 25, 10, 5)  # commits per page in recursive_loc
+REPO_PAGE_SIZES = (60, 30, 10, 5)  # repositories per page in loc_query
 REQUEST_TIMEOUT = 60     # seconds; a hung connection otherwise stalls the workflow indefinitely
 RATE_LIMIT_RETRIES = 3   # per page, on 403/429 secondary rate limits
 
@@ -155,22 +157,29 @@ def history_present(body):
     return branch is None or ((branch.get('target') or {}).get('history') is not None)
 
 
-def fetch_history_page(owner, repo_name, cursor, size_index):
+def repositories_present(body):
     """
-    Fetches one page of my commits on the default branch, shrinking the page size on timeouts.
+    True if the response has a usable page of repositories.
+    """
+    return ((body.get('data') or {}).get('user') or {}).get('repositories') is not None
+
+
+def post_with_page_fallback(funct_id, target, query, variables, page_sizes, size_index, has_data):
+    """
+    Posts one page of a paginated GraphQL query, moving to the next smaller size in page_sizes when GitHub times out.
+    `variables` gets `page_size` filled in on each attempt; has_data(body) decides whether a 200 response is usable.
     Returns (response_json, size_index) on success, where size_index is the page size that worked,
     so the next page can start there instead of re-failing the larger sizes.
     Returns (failed_request, None) if every attempt failed; failed_request may be None after a network error.
     """
     request = None
     rate_limit_waits = 0
-    while size_index < len(PAGE_SIZES):
-        page_size = PAGE_SIZES[size_index]
-        variables = {'repo_name': repo_name, 'owner': owner, 'cursor': cursor, 'page_size': page_size, 'author_id': OWNER_ID['id']}
-        query_count('recursive_loc')
+    while size_index < len(page_sizes):
+        page_size = page_sizes[size_index]
+        query_count(funct_id)
         try:
-            # I cannot use simple_request(), because I want to save the file before raising Exception
-            request = requests.post('https://api.github.com/graphql', json={'query': LOC_QUERY, 'variables': variables},
+            # Not simple_request(): callers need to save the cache file before raising
+            request = requests.post('https://api.github.com/graphql', json={'query': query, 'variables': {**variables, 'page_size': page_size}},
                                     headers=HEADERS, timeout=REQUEST_TIMEOUT)
         except requests.exceptions.RequestException as e:
             request = None
@@ -182,11 +191,7 @@ def fetch_history_page(owner, repo_name, cursor, size_index):
                 except ValueError:
                     body = {}
                 errors = body.get('errors') or []
-                if history_present(body):
-                    # Partial data is fine: GitHub reports commits it can't size as SERVICE_UNAVAILABLE
-                    # field errors and nulls them out, and loc_counter_one_repo skips those.
-                    if errors:
-                        print(f'recursive_loc() skipping {len(errors)} unsizable commit(s) in {owner}/{repo_name}')
+                if has_data(body):
                     return body, size_index
                 reason = 'GraphQL error: ' + '; '.join(err.get('message', '?') for err in errors) if errors else 'malformed response'
             elif request.status_code in (403, 429) and rate_limit_waits < RATE_LIMIT_RETRIES and (
@@ -194,7 +199,7 @@ def fetch_history_page(owner, repo_name, cursor, size_index):
                 rate_limit_waits += 1
                 retry_after = request.headers.get('Retry-After', '')
                 wait = int(retry_after) if retry_after.isdigit() else 60
-                print(f'recursive_loc() hit a rate limit for {owner}/{repo_name}, waiting {wait}s')
+                print(f'{funct_id}() hit a rate limit for {target}, waiting {wait}s')
                 time.sleep(wait)
                 continue  # same page size: the request wasn't too big, just too soon
             elif request.status_code >= 500:
@@ -203,12 +208,23 @@ def fetch_history_page(owner, repo_name, cursor, size_index):
                 return request, None  # other 4xx won't get better with a smaller page
 
         size_index += 1
-        if size_index < len(PAGE_SIZES):
-            print(f'recursive_loc() got {reason} for {owner}/{repo_name} with page size {page_size}, retrying with {PAGE_SIZES[size_index]}')
+        if size_index < len(page_sizes):
+            print(f'{funct_id}() got {reason} for {target} with page size {page_size}, retrying with {page_sizes[size_index]}')
             time.sleep(2 ** size_index)  # 2, 4, 8, 16s
         else:
-            print(f'recursive_loc() got {reason} for {owner}/{repo_name} with page size {page_size}, giving up')
+            print(f'{funct_id}() got {reason} for {target} with page size {page_size}, giving up')
     return request, None
+
+
+def raise_request_failure(funct_id, target, request):
+    """
+    Raises the Exception for a request that post_with_page_fallback() gave up on.
+    """
+    if request is None:
+        raise Exception(f'{funct_id}() could not reach GitHub for', target, QUERY_COUNT)
+    if request.status_code in (403, 429):
+        raise Exception('Too many requests in a short amount of time!\nYou\'ve hit the non-documented anti-abuse limit!')
+    raise Exception(f'{funct_id}() has failed with a', request.status_code, request.text, QUERY_COUNT)
 
 
 def recursive_loc(owner, repo_name, data, cache_comment, addition_total=0, deletion_total=0, my_commits=0, cursor=None):
@@ -220,14 +236,15 @@ def recursive_loc(owner, repo_name, data, cache_comment, addition_total=0, delet
     """
     size_index = 0
     while True:
-        result, size_index = fetch_history_page(owner, repo_name, cursor, size_index)
+        variables = {'repo_name': repo_name, 'owner': owner, 'cursor': cursor, 'author_id': OWNER_ID['id']}
+        result, size_index = post_with_page_fallback('recursive_loc', f'{owner}/{repo_name}', LOC_QUERY, variables, PAGE_SIZES, size_index, history_present)
         if size_index is None:
             force_close_file(data, cache_comment) # saves what is currently in the file before this program crashes
-            if result is None:
-                raise Exception('recursive_loc() could not reach GitHub for', f'{owner}/{repo_name}', QUERY_COUNT)
-            if result.status_code in (403, 429):
-                raise Exception('Too many requests in a short amount of time!\nYou\'ve hit the non-documented anti-abuse limit!')
-            raise Exception('recursive_loc() has failed with a', result.status_code, result.text, QUERY_COUNT)
+            raise_request_failure('recursive_loc', f'{owner}/{repo_name}', result)
+        if result.get('errors'):
+            # Partial data is fine: GitHub reports commits it can't size as SERVICE_UNAVAILABLE
+            # field errors and nulls them out, and loc_counter_one_repo skips those.
+            print(f'recursive_loc() skipping {len(result["errors"])} unsizable commit(s) in {owner}/{repo_name}')
 
         branch = result['data']['repository']['defaultBranchRef']
         if branch is None: # Only count commits if repo isn't empty
@@ -253,18 +270,17 @@ def loc_counter_one_repo(owner, repo_name, history, addition_total, deletion_tot
     return addition_total, deletion_total, my_commits
 
 
-def loc_query(owner_affiliation, comment_size=0, force_cache=False, cursor=None, edges=[]):
+def loc_query(owner_affiliation, comment_size=0, force_cache=False):
     """
     Uses GitHub's GraphQL v4 API to query all the repositories I have access to (with respect to owner_affiliation)
-    Queries 60 repos at a time, because larger queries give a 502 timeout error and smaller queries send too many
-    requests and also give a 502 error.
+    Starts at 60 repos per page and falls back to smaller pages when GitHub times out: the commit counts for
+    forks of huge projects (e.g. zkm/linux, ~1.5M commits) can push a page past GitHub's ~10s limit.
     Returns the total number of lines of code in all repositories
     """
-    query_count('loc_query')
     query = '''
-    query ($owner_affiliation: [RepositoryAffiliation], $login: String!, $cursor: String) {
+    query ($owner_affiliation: [RepositoryAffiliation], $login: String!, $cursor: String, $page_size: Int!) {
         user(login: $login) {
-            repositories(first: 60, after: $cursor, ownerAffiliations: $owner_affiliation) {
+            repositories(first: $page_size, after: $cursor, ownerAffiliations: $owner_affiliation) {
             edges {
                 node {
                     ... on Repository {
@@ -288,15 +304,19 @@ def loc_query(owner_affiliation, comment_size=0, force_cache=False, cursor=None,
             }
         }
     }'''
-    variables = {'owner_affiliation': owner_affiliation, 'login': USER_NAME, 'cursor': cursor}
-    request = simple_request(loc_query.__name__, query, variables)
-    if request.json()['data']['user']['repositories']['pageInfo']['hasNextPage']:   # If repository data has another page
-        edges += request.json()['data']['user']['repositories']['edges']            # Add on to the LoC count
-        return loc_query(owner_affiliation, comment_size, force_cache, request.json()['data']['user']['repositories']['pageInfo']['endCursor'], edges)
-    else:
-        edges = edges + request.json()['data']['user']['repositories']['edges']
-        edges = [e for e in edges if e['node']['nameWithOwner'] not in SKIP_REPOS]
-        return cache_builder(edges, comment_size, force_cache)
+    edges, cursor, size_index = [], None, 0
+    while True:
+        variables = {'owner_affiliation': owner_affiliation, 'login': USER_NAME, 'cursor': cursor}
+        result, size_index = post_with_page_fallback('loc_query', f'{USER_NAME} repositories', query, variables, REPO_PAGE_SIZES, size_index, repositories_present)
+        if size_index is None:
+            raise_request_failure('loc_query', f'{USER_NAME} repositories', result)
+        repositories = result['data']['user']['repositories']
+        edges += repositories['edges']
+        if not repositories['pageInfo']['hasNextPage']:
+            break
+        cursor = repositories['pageInfo']['endCursor']
+    edges = [e for e in edges if e['node']['nameWithOwner'] not in SKIP_REPOS]
+    return cache_builder(edges, comment_size, force_cache)
 
 
 def cache_builder(edges, comment_size, force_cache, loc_add=0, loc_del=0):
