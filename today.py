@@ -143,6 +143,18 @@ REQUEST_TIMEOUT = 60     # seconds; a hung connection otherwise stalls the workf
 RATE_LIMIT_RETRIES = 3   # per page, on 403/429 secondary rate limits
 
 
+def history_present(body):
+    """
+    True if the response has a usable commit history, or shows the repository is empty (no default branch).
+    False when the query as a whole failed, e.g. a 200 with `data: null` and a timeout in `errors`.
+    """
+    repository = (body.get('data') or {}).get('repository')
+    if repository is None:
+        return False
+    branch = repository.get('defaultBranchRef')
+    return branch is None or ((branch.get('target') or {}).get('history') is not None)
+
+
 def fetch_history_page(owner, repo_name, cursor, size_index):
     """
     Fetches one page of my commits on the default branch, shrinking the page size on timeouts.
@@ -165,10 +177,18 @@ def fetch_history_page(owner, repo_name, cursor, size_index):
             reason = type(e).__name__
         else:
             if request.status_code == 200:
-                body = request.json()
-                if not body.get('errors'):
+                try:
+                    body = request.json()
+                except ValueError:
+                    body = {}
+                errors = body.get('errors') or []
+                if history_present(body):
+                    # Partial data is fine: GitHub reports commits it can't size as SERVICE_UNAVAILABLE
+                    # field errors and nulls them out, and loc_counter_one_repo skips those.
+                    if errors:
+                        print(f'recursive_loc() skipping {len(errors)} unsizable commit(s) in {owner}/{repo_name}')
                     return body, size_index
-                reason = 'GraphQL error: ' + '; '.join(err.get('message', '?') for err in body['errors'])
+                reason = 'GraphQL error: ' + '; '.join(err.get('message', '?') for err in errors) if errors else 'malformed response'
             elif request.status_code in (403, 429) and rate_limit_waits < RATE_LIMIT_RETRIES and (
                     'Retry-After' in request.headers or 'rate limit' in request.text.lower()):
                 rate_limit_waits += 1
