@@ -110,71 +110,147 @@ def graph_repos_stars(count_type, owner_affiliation, cursor=None, add_loc=0, del
             return stars_counter(request.json()['data']['user']['repositories']['edges'])
 
 
-def recursive_loc(owner, repo_name, data, cache_comment, addition_total=0, deletion_total=0, my_commits=0, cursor=None):
-    """
-    Uses GitHub's GraphQL v4 API and cursor pagination to fetch 100 commits from a repository at a time
-    """
-    query_count('recursive_loc')
-    query = '''
-    query ($repo_name: String!, $owner: String!, $cursor: String) {
-        repository(name: $repo_name, owner: $owner) {
-            defaultBranchRef {
-                target {
-                    ... on Commit {
-                        history(first: 100, after: $cursor) {
-                            totalCount
-                            edges {
-                                node {
-                                    ... on Commit {
-                                        committedDate
-                                    }
-                                    author {
-                                        user {
-                                            id
-                                        }
-                                    }
-                                    deletions
-                                    additions
+LOC_QUERY = '''
+query ($repo_name: String!, $owner: String!, $cursor: String, $page_size: Int!, $author_id: ID!) {
+    repository(name: $repo_name, owner: $owner) {
+        defaultBranchRef {
+            target {
+                ... on Commit {
+                    history(first: $page_size, after: $cursor, author: {id: $author_id}) {
+                        edges {
+                            node {
+                                ... on Commit {
+                                    committedDate
                                 }
+                                deletions
+                                additions
                             }
-                            pageInfo {
-                                endCursor
-                                hasNextPage
-                            }
+                        }
+                        pageInfo {
+                            endCursor
+                            hasNextPage
                         }
                     }
                 }
             }
         }
-    }'''
-    variables = {'repo_name': repo_name, 'owner': owner, 'cursor': cursor}
-    request = requests.post('https://api.github.com/graphql', json={'query': query, 'variables':variables}, headers=HEADERS) # I cannot use simple_request(), because I want to save the file before raising Exception
-    if request.status_code == 200:
-        if request.json()['data']['repository']['defaultBranchRef'] != None: # Only count commits if repo isn't empty
-            return loc_counter_one_repo(owner, repo_name, data, cache_comment, request.json()['data']['repository']['defaultBranchRef']['target']['history'], addition_total, deletion_total, my_commits)
-        else: return 0
-    force_close_file(data, cache_comment) # saves what is currently in the file before this program crashes
-    if request.status_code == 403:
-        raise Exception('Too many requests in a short amount of time!\nYou\'ve hit the non-documented anti-abuse limit!')
-    raise Exception('recursive_loc() has failed with a', request.status_code, request.text, QUERY_COUNT)
+    }
+}'''
+# GitHub returns 502/504 (or a 200 with a timeout in `errors`) when computing additions/deletions
+# for a page of large commits takes too long, so fall back to progressively smaller pages.
+PAGE_SIZES = (100, 50, 25, 10, 5)
+REQUEST_TIMEOUT = 60     # seconds; a hung connection otherwise stalls the workflow indefinitely
+RATE_LIMIT_RETRIES = 3   # per page, on 403/429 secondary rate limits
 
 
-def loc_counter_one_repo(owner, repo_name, data, cache_comment, history, addition_total, deletion_total, my_commits):
+def history_present(body):
     """
-    Recursively call recursive_loc (since GraphQL can only search 100 commits at a time) 
-    only adds the LOC value of commits authored by me
+    True if the response has a usable commit history, or shows the repository is empty (no default branch).
+    False when the query as a whole failed, e.g. a 200 with `data: null` and a timeout in `errors`.
+    """
+    repository = (body.get('data') or {}).get('repository')
+    if repository is None:
+        return False
+    branch = repository.get('defaultBranchRef')
+    return branch is None or ((branch.get('target') or {}).get('history') is not None)
+
+
+def fetch_history_page(owner, repo_name, cursor, size_index):
+    """
+    Fetches one page of my commits on the default branch, shrinking the page size on timeouts.
+    Returns (response_json, size_index) on success, where size_index is the page size that worked,
+    so the next page can start there instead of re-failing the larger sizes.
+    Returns (failed_request, None) if every attempt failed; failed_request may be None after a network error.
+    """
+    request = None
+    rate_limit_waits = 0
+    while size_index < len(PAGE_SIZES):
+        page_size = PAGE_SIZES[size_index]
+        variables = {'repo_name': repo_name, 'owner': owner, 'cursor': cursor, 'page_size': page_size, 'author_id': OWNER_ID['id']}
+        query_count('recursive_loc')
+        try:
+            # I cannot use simple_request(), because I want to save the file before raising Exception
+            request = requests.post('https://api.github.com/graphql', json={'query': LOC_QUERY, 'variables': variables},
+                                    headers=HEADERS, timeout=REQUEST_TIMEOUT)
+        except requests.exceptions.RequestException as e:
+            request = None
+            reason = type(e).__name__
+        else:
+            if request.status_code == 200:
+                try:
+                    body = request.json()
+                except ValueError:
+                    body = {}
+                errors = body.get('errors') or []
+                if history_present(body):
+                    # Partial data is fine: GitHub reports commits it can't size as SERVICE_UNAVAILABLE
+                    # field errors and nulls them out, and loc_counter_one_repo skips those.
+                    if errors:
+                        print(f'recursive_loc() skipping {len(errors)} unsizable commit(s) in {owner}/{repo_name}')
+                    return body, size_index
+                reason = 'GraphQL error: ' + '; '.join(err.get('message', '?') for err in errors) if errors else 'malformed response'
+            elif request.status_code in (403, 429) and rate_limit_waits < RATE_LIMIT_RETRIES and (
+                    'Retry-After' in request.headers or 'rate limit' in request.text.lower()):
+                rate_limit_waits += 1
+                retry_after = request.headers.get('Retry-After', '')
+                wait = int(retry_after) if retry_after.isdigit() else 60
+                print(f'recursive_loc() hit a rate limit for {owner}/{repo_name}, waiting {wait}s')
+                time.sleep(wait)
+                continue  # same page size: the request wasn't too big, just too soon
+            elif request.status_code >= 500:
+                reason = f'HTTP {request.status_code}'
+            else:
+                return request, None  # other 4xx won't get better with a smaller page
+
+        size_index += 1
+        if size_index < len(PAGE_SIZES):
+            print(f'recursive_loc() got {reason} for {owner}/{repo_name} with page size {page_size}, retrying with {PAGE_SIZES[size_index]}')
+            time.sleep(2 ** size_index)  # 2, 4, 8, 16s
+        else:
+            print(f'recursive_loc() got {reason} for {owner}/{repo_name} with page size {page_size}, giving up')
+    return request, None
+
+
+def recursive_loc(owner, repo_name, data, cache_comment, addition_total=0, deletion_total=0, my_commits=0, cursor=None):
+    """
+    Uses GitHub's GraphQL v4 API and cursor pagination to count the additions, deletions and commits I authored in a repository.
+    History is filtered by author server-side, which keeps huge forks (e.g. zkm/drupal, ~48k commits) from being paged in full.
+    Pages are walked in a loop rather than by recursion, so small page sizes can't hit Python's recursion limit.
+    Returns 0 if the repository is empty.
+    """
+    size_index = 0
+    while True:
+        result, size_index = fetch_history_page(owner, repo_name, cursor, size_index)
+        if size_index is None:
+            force_close_file(data, cache_comment) # saves what is currently in the file before this program crashes
+            if result is None:
+                raise Exception('recursive_loc() could not reach GitHub for', f'{owner}/{repo_name}', QUERY_COUNT)
+            if result.status_code in (403, 429):
+                raise Exception('Too many requests in a short amount of time!\nYou\'ve hit the non-documented anti-abuse limit!')
+            raise Exception('recursive_loc() has failed with a', result.status_code, result.text, QUERY_COUNT)
+
+        branch = result['data']['repository']['defaultBranchRef']
+        if branch is None: # Only count commits if repo isn't empty
+            return 0
+        history = branch['target']['history']
+        addition_total, deletion_total, my_commits = loc_counter_one_repo(owner, repo_name, history, addition_total, deletion_total, my_commits)
+        if history['edges'] == [] or not history['pageInfo']['hasNextPage']:
+            return addition_total, deletion_total, my_commits
+        cursor = history['pageInfo']['endCursor']
+
+
+def loc_counter_one_repo(owner, repo_name, history, addition_total, deletion_total, my_commits):
+    """
+    Adds up the LOC values for one page of commits. The history is already filtered to commits authored by me.
     """
     for node in history['edges']:
         commit = node and node['node']
-        if commit and commit['author']['user'] == OWNER_ID:
+        if commit:
             my_commits += 1
             if f'{owner}/{repo_name}' not in NO_LOC_REPOS:
                 addition_total += commit['additions'] or 0  # None when GitHub can't size the commit
                 deletion_total += commit['deletions'] or 0
-
-    if history['edges'] == [] or not history['pageInfo']['hasNextPage']:
-        return addition_total, deletion_total, my_commits
-    else: return recursive_loc(owner, repo_name, data, cache_comment, addition_total, deletion_total, my_commits, history['pageInfo']['endCursor'])
+    return addition_total, deletion_total, my_commits
 
 
 def loc_query(owner_affiliation, comment_size=0, force_cache=False, cursor=None, edges=[]):
@@ -485,4 +561,4 @@ if __name__ == '__main__':
         ' s \033[E\033[E\033[E\033[E\033[E\033[E\033[E\033[E', sep='')
 
     print('Total GitHub GraphQL API calls:', '{:>3}'.format(sum(QUERY_COUNT.values())))
-    for funct_name, count in QUERY_COUNT.items(): print('{:<28}'.format('   ' + funct_name + ':'), '{:>6}'.format(count))
+    for funct_name, count in QUERY_COUNT.items(): print('{:<28}'.format('   ' + funct_name + ':'), '{:>6}'.format(count))
