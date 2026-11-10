@@ -103,6 +103,9 @@ def graph_repos_stars(count_type, owner_affiliation, cursor=None, add_loc=0, del
     }'''
     variables = {'owner_affiliation': owner_affiliation, 'login': USER_NAME, 'cursor': cursor}
     request = simple_request(graph_repos_stars.__name__, query, variables)
+    for err in request.json().get('errors') or []:
+        # GitHub nulls out a repository it can't resolve (e.g. one the token can't read) and reports why here
+        print('graph_repos_stars() GraphQL error:', err.get('type'), err.get('message'), err.get('path'))
     if request.status_code == 200:
         if count_type == 'repos':
             return request.json()['data']['user']['repositories']['totalCount']
@@ -416,7 +419,9 @@ def stars_counter(data):
     Count total stars in repositories owned by me
     """
     total_stars = 0
-    for node in data: total_stars += node['node']['stargazers']['totalCount']
+    for node in data:
+        if node and node['node']: # null when GitHub couldn't resolve the repository
+            total_stars += node['node']['stargazers']['totalCount']
     return total_stars
 
 
