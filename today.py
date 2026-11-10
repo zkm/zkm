@@ -116,12 +116,12 @@ def recursive_loc(owner, repo_name, data, cache_comment, addition_total=0, delet
     """
     query_count('recursive_loc')
     query = '''
-    query ($repo_name: String!, $owner: String!, $cursor: String) {
+    query ($repo_name: String!, $owner: String!, $cursor: String, $page_size: Int!, $author_id: ID!) {
         repository(name: $repo_name, owner: $owner) {
             defaultBranchRef {
                 target {
                     ... on Commit {
-                        history(first: 100, after: $cursor) {
+                        history(first: $page_size, after: $cursor, author: {id: $author_id}) {
                             totalCount
                             edges {
                                 node {
@@ -147,8 +147,16 @@ def recursive_loc(owner, repo_name, data, cache_comment, addition_total=0, delet
             }
         }
     }'''
-    variables = {'repo_name': repo_name, 'owner': owner, 'cursor': cursor}
-    request = requests.post('https://api.github.com/graphql', json={'query': query, 'variables':variables}, headers=HEADERS) # I cannot use simple_request(), because I want to save the file before raising Exception
+    # Filtering by author server-side keeps huge forks (e.g. zkm/drupal, ~48k commits) from being paged in full.
+    # GitHub returns 502/504 when computing additions/deletions for a page of large commits
+    # takes too long, so retry with progressively smaller pages before giving up.
+    for page_size in (100, 50, 25, 10, 5):
+        variables = {'repo_name': repo_name, 'owner': owner, 'cursor': cursor, 'page_size': page_size, 'author_id': OWNER_ID['id']}
+        request = requests.post('https://api.github.com/graphql', json={'query': query, 'variables':variables}, headers=HEADERS) # I cannot use simple_request(), because I want to save the file before raising Exception
+        if request.status_code < 500:
+            break
+        print(f'recursive_loc() got {request.status_code} for {owner}/{repo_name} with page size {page_size}, retrying smaller')
+        time.sleep(2)
     if request.status_code == 200:
         if request.json()['data']['repository']['defaultBranchRef'] != None: # Only count commits if repo isn't empty
             return loc_counter_one_repo(owner, repo_name, data, cache_comment, request.json()['data']['repository']['defaultBranchRef']['target']['history'], addition_total, deletion_total, my_commits)
